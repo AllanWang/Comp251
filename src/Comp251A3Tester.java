@@ -8,6 +8,11 @@ import java.util.Scanner;
 /**
  * Created by Allan Wang on 12/03/2017.
  * FordFulkerson Tester class
+ *
+ * Though there may exist more than one resulting graph,
+ * I am basing the results on using listOfEdgesSorted
+ *
+ * The sorted children set defines which depth path we check first
  */
 public class Comp251A3Tester {
 
@@ -67,10 +72,10 @@ public class Comp251A3Tester {
         try {
             Field gSource = WGraph.class.getDeclaredField("source");
             gSource.setAccessible(true);
-            source = (Integer) gSource.get(graph);
+            source = (int) gSource.get(graph);
             Field gDest = WGraph.class.getDeclaredField("destination");
             gDest.setAccessible(true);
-            dest = (Integer) gDest.get(graph);
+            dest = (int) gDest.get(graph);
         } catch (Exception e) {
             throw new RuntimeException("Failed to extract graph data");
         }
@@ -95,8 +100,9 @@ public class Comp251A3Tester {
         FGraph graph = new FGraph(maxFlow, data);
         if (!doGraphsMatch(generated, graph)) {
             errorLog.add(String.format("%s - %s", fileName, errorMessage));
-            print("\n\tFailed");
-        } else print("\n\tSuccess");
+            print("\nFailed");
+            print("\nAnswer:\n%s", graph);
+        } else print("\nSuccess");
         return this;
     }
 
@@ -205,7 +211,7 @@ public class Comp251A3Tester {
 
         @Override
         public String toString() {
-            return maxFlow + " " + graph.toString();
+            return maxFlow + "\n" + graph.toString();
         }
 
     }
