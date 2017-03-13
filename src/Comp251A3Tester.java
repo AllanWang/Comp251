@@ -9,19 +9,24 @@ import java.util.Scanner;
  * Created by Allan Wang on 12/03/2017.
  * FordFulkerson Tester class
  *
- * Though there may exist more than one resulting graph,
+ * Though there may exist more than one valid result,
  * I am basing the results on using listOfEdgesSorted
  *
  * The sorted children set defines which depth path we check first
+ *
+ * Copy this file in the same directory as the other classes
+ * All imports are added, so as long as there are no further package names,
+ * you should be able to run the main method directly
  */
 public class Comp251A3Tester {
 
     public static void main(String[] args) {
         deleteTesters(); //clear files since WGraph constructor won't do it
-        initTesters();
+        initTesters(); //create test folder
+        //run series of tests
         ff2();
         printResults();
-//        deleteTesters();
+        //deleteTesters(); //to clear the test folder
     }
 
     static void ff2() {
