@@ -1,102 +1,79 @@
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.List;
+import java.util.Scanner;
 
 /**
  * Created by Allan Wang on 12/03/2017.
- *
- * Test Code for Comp 251 - A3 - 2017
- * The instructions are still marked as a draft, and some of my solutions are arbitrary
- * This may help identify some issues, but if an error is thrown, check to see if it's actually an error
- * Look at the commit history to see the last update time.
+ * FordFulkerson Tester class
  */
 public class Comp251A3Tester {
 
-    private WGraph graph = new WGraph();
-    private boolean hasSourceEdge = false, hasDestEdge = false;
-    private ArrayList<Integer> dfs;
-    private static ArrayList<String> errors = new ArrayList<>();
-
     public static void main(String[] args) {
-        test1();
-        test2();
-        test3();
-        printError();
+        deleteTesters(); //clear files since WGraph constructor won't do it
+        initTesters();
+        ff2();
+        printResults();
+//        deleteTesters();
     }
 
-    // basic test
-    static void test1() {
-        new Comp251A3Tester(1, 5)
-                .addEdges(1, 2, 1, 2, 5, 1, 3, 1, 2)
-                .verify()
+    static void ff2() {
+        new Comp251A3Tester("ff2",
+                0, 5,
+                6,
+                0, 1, 16,
+                0, 2, 13,
+                1, 3, 12,
+                2, 1, 4,
+                2, 4, 14,
+                3, 2, 9,
+                3, 5, 20,
+                4, 3, 7,
+                4, 5, 4)
 //                .printGraph()
-                .getDFS().checkDFS("Test 1 failed", 1, 2, 5);
+                .fordFulkerson()
+                .compare(23,
+                        0, 5,
+                        6,
+                        0, 1, 12,
+                        0, 2, 11,
+                        1, 3, 12,
+                        2, 1, 0,
+                        2, 4, 11,
+                        3, 2, 0,
+                        3, 5, 19,
+                        4, 3, 7,
+                        4, 5, 4);
     }
 
-    //test with cycle
-    static void test2() {
-        new Comp251A3Tester(3, 7)
-                .addEdgesConstantWeight(3, 1, 3, 5, 1, 0, 1, 2, 5, 7, 7, 6, 3, 9, 9, 3, 9, 8, 5, 8, 8, 5)
-//                .printGraph()
-                .verify()
-                .getDFS().checkDFS("Test 2 failed", 3, 5, 7);
-    }
+    static final String baseFolder = "AWC251A3T"; //just to make sure I don't delete anything important
+    static ArrayList<String> errorLog = new ArrayList<>();
+    final String fileName;
+    final int source, dest;
+    WGraph graph;
 
-    //test without a valid path (assuming directions matter)
-    static void test3() {
-        new Comp251A3Tester(1, 9)
-                .addEdgesConstantWeight(1, 2, 2, 4, 2, 5, 1, 3, 3, 6, 3, 7, 5, 8, 9, 8, 10, 9)
-                .verify()
-                .getDFS().checkDFS("Test 3 should not return a valid path");
-    }
-
-    static void printError() {
-        print("\n");
-        if (errors.isEmpty()) {
-            print("No Errors");
-            return;
-        }
-        print("Errors");
-        for (String s : errors) {
-            print("\t%s", s);
-        }
-    }
-
-    Comp251A3Tester(int source, int destination) {
+    /**
+     * Create graph file with given inputs
+     *
+     * @param fileName relative to local root
+     * @param data     int values for graph
+     */
+    Comp251A3Tester(String fileName, int... data) {
+        this.fileName = fileName;
+        graph = createGraph(data);
+        print("\nTest - %s", fileName);
         try {
             Field gSource = WGraph.class.getDeclaredField("source");
             gSource.setAccessible(true);
-            gSource.set(graph, source);
+            source = (Integer) gSource.get(graph);
             Field gDest = WGraph.class.getDeclaredField("destination");
             gDest.setAccessible(true);
-            gDest.set(graph, destination);
+            dest = (Integer) gDest.get(graph);
         } catch (Exception e) {
-            print("Make sure you are using the new WGraph, not the one in a2");
+            throw new RuntimeException("Failed to extract graph data");
         }
-    }
-
-    Comp251A3Tester addEdges(int... vals) {
-        if (vals.length % 3 != 0)
-            print("addEdges requires the source, dest, and weight for each edge; size should be multiple of 3");
-        for (int i = 0; i < vals.length / 3; i++) {
-            int j = i * 3;
-            graph.addEdge(new Edge(vals[j], vals[j + 1], vals[j + 2]));
-            if (vals[j] == graph.getSource()) hasSourceEdge = true;
-            if (vals[j + 1] == graph.getDestination()) hasDestEdge = true;
-        }
-        return this;
-    }
-
-    Comp251A3Tester addEdgesConstantWeight(int... vals) {
-        if (vals.length % 2 != 0)
-            print("addEdgesConstantWeight requires the source, and dest for each edge; size should be multiple of 2");
-        for (int i = 0; i < vals.length / 2; i++) {
-            int j = i * 2;
-            graph.addEdge(new Edge(vals[j], vals[j + 1], 1));
-            if (vals[j] == graph.getSource()) hasSourceEdge = true;
-            if (vals[j + 1] == graph.getDestination()) hasDestEdge = true;
-        }
-        return this;
     }
 
     Comp251A3Tester printGraph() {
@@ -104,35 +81,133 @@ public class Comp251A3Tester {
         return this;
     }
 
-    Comp251A3Tester getDFS() {
-        dfs = FordFulkerson.pathDFS(graph.getSource(), graph.getDestination(), graph);
-        print("DFS: %s", dfs.toString());
+    Comp251A3Tester fordFulkerson() {
+        FordFulkerson.fordfulkerson(source, dest, graph, baseFolder + "/" + fileName);
         return this;
     }
 
-    Comp251A3Tester checkDFS(String errorMessage, Integer... path) {
-        if (!checkDFS(path)) errors.add(errorMessage);
+    Comp251A3Tester compare(int maxFlow, int... data) {
+        return compare("Failed", maxFlow, data);
+    }
+
+    Comp251A3Tester compare(String errorMessage, int maxFlow, int... data) {
+        FGraph generated = new FGraph(baseFolder + "/" + getGeneratedFile());
+        FGraph graph = new FGraph(maxFlow, data);
+        if (!doGraphsMatch(generated, graph)) {
+            errorLog.add(String.format("%s - %s", fileName, errorMessage));
+            print("\n\tFailed");
+        } else print("\n\tSuccess");
         return this;
     }
 
-    boolean checkDFS(Integer... path) {
-        if (dfs == null) {
-            print("Run dfs before comparing results");
-            return false;
+    boolean doGraphsMatch(FGraph g1, FGraph g2) {
+        return g1.toString().trim().equals(g2.toString().trim());
+    }
+
+    String getGeneratedFile() {
+        File dir = new File(baseFolder);
+        for (File file : dir.listFiles())
+            if (file.getName().startsWith(fileName))
+                return file.getName();
+        return null;
+    }
+
+    WGraph createGraph(int... data) {
+        if (data.length < 6 || data.length % 3 != 0)
+            throw new RuntimeException("Bad graph data; check that it matches the format");
+        WGraph graph = new WGraph();
+        try {
+            Field gSource = WGraph.class.getDeclaredField("source");
+            gSource.setAccessible(true);
+            gSource.set(graph, data[0]);
+            Field gDest = WGraph.class.getDeclaredField("destination");
+            gDest.setAccessible(true);
+            gDest.set(graph, data[1]);
+            Field gNumNodes = WGraph.class.getDeclaredField("nb_nodes");
+            gNumNodes.setAccessible(true);
+            gNumNodes.set(graph, 0);
+            for (int i = 3; i < data.length - 2; i += 3)
+                graph.addEdge(new Edge(data[i], data[i + 1], data[i + 2]));
+            //sanity check
+            if (graph.getNbNodes() != data[2])
+                throw new RuntimeException("Graph data numNodes mismatch");
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to create new Graph");
         }
-        boolean result = dfs.equals(new ArrayList<Integer>(Arrays.asList(path)));
-        print(result ? "\tSuccess" : "\tMatch failed");
-        return result;
+        return graph;
+    }
+
+    //static helpers
+
+    static void initTesters() {
+        File dir = new File(baseFolder);
+        if (dir.exists()) return;
+        dir.mkdirs();
+    }
+
+    static void deleteTesters() {
+        delete(new File(baseFolder));
+    }
+
+    static void printResults() {
+        print("\n");
+        if (errorLog.isEmpty())
+            print("Success");
+        else
+            for (String s : errorLog)
+                print(s);
+    }
+
+    private static void delete(File file) {
+        for (File childFile : file.listFiles())
+            if (childFile.isDirectory())
+                delete(childFile);
+            else
+                childFile.delete();
+        file.delete();
     }
 
     static void print(String s, Object... o) {
         System.out.println(String.format(s, o));
     }
 
-    Comp251A3Tester verify() {
-        if (!hasSourceEdge) throw new RuntimeException("The source must be one of the nodes");
-        if (!hasDestEdge) throw new RuntimeException("The destination must be one of the nodes");
-        return this;
+    class FGraph {
+        int maxFlow;
+        WGraph graph;
+
+        int[] toIntArray(List<Integer> list) {
+            int[] ret = new int[list.size()];
+            int i = 0;
+            for (Integer e : list)
+                ret[i++] = e;
+            return ret;
+        }
+
+        FGraph(int maxFlow, int... data) {
+            this.maxFlow = maxFlow;
+            graph = createGraph(data);
+        }
+
+        FGraph(String file) {
+            try {
+                Scanner f = new Scanner(new File(file));
+                maxFlow = f.nextInt();
+                List<Integer> data = new ArrayList<>();
+                while (f.hasNextInt())
+                    data.add(f.nextInt());
+                graph = createGraph(toIntArray(data));
+                f.close();
+            } catch (FileNotFoundException e) {
+                System.out.println("File not found!");
+                System.exit(1);
+            }
+        }
+
+        @Override
+        public String toString() {
+            return maxFlow + " " + graph.toString();
+        }
+
     }
 
 }
