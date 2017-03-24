@@ -25,8 +25,8 @@ public class Comp251A3Tester {
         deleteTesters(); //clear files since WGraph constructor won't do it
         initTesters(); //create test folder
         //run series of tests
-//        ff2();
-//        bf1();
+        ff2();
+        bf1();
         bf2();
         bf3();
         bf4();
